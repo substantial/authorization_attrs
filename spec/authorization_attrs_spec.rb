@@ -42,7 +42,7 @@ describe AuthorizationAttrs do
   let(:foo) { mock_model(FooAttrTestClass, bar_id: 1, taco_id: 2) }
   let(:user) { double(:user, bar_id: 1, taco_id: 90) }
 
-  describe "acceptance specs", :db do
+  describe "acceptance specs" do
     let(:foo) { FooAttrTestClass.create }
 
     before :all do

@@ -16,7 +16,7 @@ module AuthorizationAttrs
       end
     end
 
-    describe ".authorizations_match?", :db do
+    describe ".authorizations_match?" do
       let(:foo) { FooAttrTestClass.create }
 
       before do
