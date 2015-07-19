@@ -1,4 +1,4 @@
-require_dependency "authorization_attrs"
+require 'authorization_attrs/retry'
 
 module AuthorizationAttrs
   class SqlDataStore

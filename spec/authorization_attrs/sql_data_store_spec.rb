@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 module AuthorizationAttrs
   class FooAttrTestClass < ActiveRecord::Base; end
 

@@ -11,29 +11,31 @@ describe AuthorizationAttrs do
     end
   end
 
-  module Authorizations::FooAttrTestClassAuthorizations
-    def self.model_attrs(foo)
-      [
-        { bar_id: foo.bar_id },
-        { taco_id: foo.taco_id }
-      ]
-    end
-
-    class UserAuthorizationAttrs
-      def initialize(user)
-        @user = user
-      end
-
-      def bazify
+  module Authorizations
+    module FooAttrTestClassAuthorizations
+      def self.model_attrs(foo)
         [
-          { bar_id: user.bar_id },
-          { taco_id: user.taco_id }
+          { bar_id: foo.bar_id },
+          { taco_id: foo.taco_id }
         ]
       end
 
-      private
+      class UserAuthorizationAttrs
+        def initialize(user)
+          @user = user
+        end
 
-      attr_reader :user
+        def bazify
+          [
+            { bar_id: user.bar_id },
+            { taco_id: user.taco_id }
+          ]
+        end
+
+        private
+
+        attr_reader :user
+      end
     end
   end
 

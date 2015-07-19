@@ -1,4 +1,6 @@
 require "authorization_attrs/version"
+require 'authorization_attrs/sql_data_store'
+require 'authorization_attrs/default_finder'
 
 module AuthorizationAttrs
   def self.authorized?(permission, record, user)
