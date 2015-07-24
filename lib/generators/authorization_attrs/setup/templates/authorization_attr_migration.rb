@@ -1,4 +1,4 @@
-class CreateAuthorizationKeys < ActiveRecord::Migration
+class CreateAuthorizationAttrs < ActiveRecord::Migration
   def change
     create_table :authorization_attrs do |t|
       t.string :name
