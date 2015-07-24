@@ -8,7 +8,10 @@ module AuthorizationAttrs
       desc "Generates the appropriate model to use authorization_attrs"
 
       def setup_model
+        timestamp = Time.now.strftime("%Y%m%d%H%M%S")
+
         copy_file "authorization_attr.rb", "app/models/authorization_attr.rb"
+        copy_file "authorization_attr_migration.rb", "app/db/migrate/#{timestamp}_add_authorization_attrs_table.rb"
       end
     end
   end
