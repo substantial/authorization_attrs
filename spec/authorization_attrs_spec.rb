@@ -60,7 +60,7 @@ describe AuthorizationAttrs do
     it 'should return true if one of the attributes overlap' do
       AuthorizationAttrs.reset_attrs_for(foo)
 
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
+      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo.id, user)
 
       expect(authorized).to eq true
     end
@@ -70,7 +70,7 @@ describe AuthorizationAttrs do
       allow(user).to receive(:taco_id) { "nope" }
       AuthorizationAttrs.reset_attrs_for(foo)
 
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
+      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo.id, user)
 
       expect(authorized).to eq false
     end

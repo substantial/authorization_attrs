@@ -7,7 +7,7 @@ module AuthorizationAttrs
   def self.authorized?(permission, model, record, user)
     record_id = IdsFilter.filter(record)
 
-    user_attrs = user_attrs(permission, record.class, user)
+    user_attrs = user_attrs(permission, model, user)
 
     return true if user_attrs == :all
     return false if user_attrs == []
