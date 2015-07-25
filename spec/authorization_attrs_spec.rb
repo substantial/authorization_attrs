@@ -33,6 +33,14 @@ describe AuthorizationAttrs do
       expect(authorized).to eq false
     end
 
+    it 'should return false if user attributes return nil' do
+      allow(authorizations_class_instance).to receive(:bazify) { nil }
+
+      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
+
+      expect(authorized).to eq false
+    end
+
     it 'should delegate the comparison of attributes to the storage strategy' do
       allow(authorizations_class_instance).to receive(:bazify) { "array of user attrs" }
 
@@ -47,6 +55,18 @@ describe AuthorizationAttrs do
   end
 
   describe ".find_by_permission" do
+    it "should return an empty array if user attrs are nil" do
+      allow(authorizations_class_instance).to receive(:bazify) { nil }
+
+      expect(AuthorizationAttrs.find_by_permission(:bazify, Foo, user)).to eq []
+    end
+
+    it "should return an empty array if user attrs are empty" do
+      allow(authorizations_class_instance).to receive(:bazify) { [] }
+
+      expect(AuthorizationAttrs.find_by_permission(:bazify, Foo, user)).to eq []
+    end
+
     it "should delegate to the storage_strategy" do
       allow(authorizations_class_instance).to receive(:bazify) { "array of user attrs" }
 

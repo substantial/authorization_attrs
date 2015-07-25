@@ -10,7 +10,7 @@ module AuthorizationAttrs
     user_attrs = user_attrs(permission, model, user)
 
     return true if user_attrs == :all
-    return false if user_attrs == []
+    return false if user_attrs == [] || user_attrs.nil?
 
     storage_strategy.authorizations_match?(
       model: model,
@@ -21,6 +21,8 @@ module AuthorizationAttrs
 
   def self.find_by_permission(permission, model, user)
     user_attrs = user_attrs(permission, model, user)
+
+    return [] if user_attrs == [] || user_attrs.nil?
 
     storage_strategy.find_by_permission(model: model, user_attrs: user_attrs)
   end
