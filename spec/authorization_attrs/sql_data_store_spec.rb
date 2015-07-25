@@ -16,6 +16,27 @@ module AuthorizationAttrs
       end
     end
 
+    def make_full_overlap_foo
+      foo = Foo.create
+      attrs = [{ bar_id: 1 }, { taco_id: 2 }]
+      SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
+      foo
+    end
+
+    def make_partial_overlap_foo
+      foo = Foo.create
+      attrs = [{ bar_id: 1 }, { taco_id: 999 }]
+      SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
+      foo
+    end
+
+    def make_no_overlap_foo
+      foo = Foo.create
+      attrs = [{ bar_id: 999 }, { taco_id: 999 }]
+      SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
+      foo
+    end
+
     describe ".authorizations_match?" do
       let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
 
@@ -28,67 +49,30 @@ module AuthorizationAttrs
       end
 
       context "single records" do
-        let(:foo) { Foo.create }
-
         it 'should return true if multiple attributes overlap' do
-          attrs = [{ bar_id: 1 }, { taco_id: 2 }]
-          SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
-
-          expect(authorizations_match?([foo.id])).to eq true
+          expect(authorizations_match?([make_full_overlap_foo.id])).to eq true
         end
 
         it 'should return true if one of the attributes overlap' do
-          attrs = [{ bar_id: 1 }, { taco_id: 999 }]
-          SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
-
-          expect(authorizations_match?([foo.id])).to eq true
+          expect(authorizations_match?([make_partial_overlap_foo.id])).to eq true
         end
 
         it 'should return false if none of the attributes overlap' do
-          attrs = [{ bar_id: 999 }, { taco_id: 999 }]
-          SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
-
-          expect(authorizations_match?([foo.id])).to eq false
+          expect(authorizations_match?([make_no_overlap_foo.id])).to eq false
         end
       end
 
       context "multiple record ids" do
-        let(:first_foo) { Foo.create }
-        let(:second_foo) { Foo.create }
-
         it 'should return true if all of the records are authorized' do
-          record_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
-          SqlDataStore.reset_attrs_for(first_foo, new_record_attrs: record_attrs)
-          SqlDataStore.reset_attrs_for(second_foo, new_record_attrs: record_attrs)
-
-          expect(authorizations_match?([first_foo.id])).to eq true
-          expect(authorizations_match?([second_foo.id])).to eq true
-          expect(authorizations_match?([first_foo.id, second_foo.id])).to eq true
+          expect(authorizations_match?([make_full_overlap_foo.id, make_full_overlap_foo.id])).to eq true
         end
 
         it 'should return false if any of the records are unauthorized' do
-          user_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
-
-          first_foo_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
-          second_foo_attrs = [{ bar_id: 999 }, { taco_id: 999 }]
-          SqlDataStore.reset_attrs_for(first_foo, new_record_attrs: first_foo_attrs)
-          SqlDataStore.reset_attrs_for(second_foo, new_record_attrs: second_foo_attrs)
-
-          expect(authorizations_match?([first_foo.id])).to eq true
-          expect(authorizations_match?([second_foo.id])).to eq false
-          expect(authorizations_match?([first_foo.id, second_foo.id])).to eq false
+          expect(authorizations_match?([make_full_overlap_foo.id, make_no_overlap_foo.id])).to eq false
         end
 
         it 'should return false if all of the records are unauthorized' do
-          user_attrs = [{ bar_id: 1 }, { taco_id: 50 }]
-
-          record_attrs = [{ bar_id: 999 }, { taco_id: 999 }]
-          SqlDataStore.reset_attrs_for(first_foo, new_record_attrs: record_attrs)
-          SqlDataStore.reset_attrs_for(second_foo, new_record_attrs: record_attrs)
-
-          expect(authorizations_match?([first_foo.id])).to eq false
-          expect(authorizations_match?([second_foo.id])).to eq false
-          expect(authorizations_match?([first_foo.id, second_foo.id])).to eq false
+          expect(authorizations_match?([make_no_overlap_foo.id, make_no_overlap_foo.id])).to eq false
         end
       end
     end
