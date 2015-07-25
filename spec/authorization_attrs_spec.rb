@@ -1,98 +1,24 @@
 require 'spec_helper'
 
 describe AuthorizationAttrs do
-  class Foo < ActiveRecord::Base
-    def bar_id
-      1
-    end
-
-    def taco_id
-      2
-    end
-  end
-
-  module Authorizations
-    module FooAuthorizations
-      def self.model_attrs(foo)
-        [
-          { bar_id: foo.bar_id },
-          { taco_id: foo.taco_id }
-        ]
-      end
-
-      class UserAuthorizationAttrs
-        def initialize(user)
-          @user = user
-        end
-
-        def bazify
-          [
-            { bar_id: user.bar_id },
-            { taco_id: user.taco_id }
-          ]
-        end
-
-        private
-
-        attr_reader :user
-      end
-    end
-  end
-
-  let(:foo) { mock_model(Foo, bar_id: 1, taco_id: 2) }
+  let(:foo) { mock_model("Foo", bar_id: 1, taco_id: 2) }
   let(:user) { double(:user, bar_id: 1, taco_id: 90) }
+  let(:user_attrs_class) { double(:user_attrs_class) }
+  let(:user_attrs_class_instance) { double(:user_attrs_class_instance) }
+  let(:record_attrs_class) { double(:record_attrs_class) }
 
-  describe "acceptance specs" do
-    let(:foo) { Foo.create }
+  before do
+    allow(AuthorizationAttrs::SqlDataStore).to receive(:authorizations_match?)
+    allow(IdsFilter).to receive(:filter).with(foo) { "array of record ids" }
 
-    before :all do
-      ActiveRecord::Migration.suppress_messages do
-        ActiveRecord::Migration.create_table :foos, temporary: true
-      end
-    end
-
-    after :all do
-      ActiveRecord::Migration.suppress_messages do
-        ActiveRecord::Migration.drop_table :foos
-      end
-    end
-
-    it 'should return true if one of the attributes overlap' do
-      AuthorizationAttrs.reset_attrs_for(foo)
-
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo.id, user)
-
-      expect(authorized).to eq true
-    end
-
-    it 'can be called with a record' do
-      AuthorizationAttrs.reset_attrs_for(foo)
-
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
-
-      expect(authorized).to eq true
-    end
-
-    it 'should return false if none of the attributes overlap' do
-      allow(user).to receive(:bar_id) { "nope" }
-      allow(user).to receive(:taco_id) { "nope" }
-      AuthorizationAttrs.reset_attrs_for(foo)
-
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo.id, user)
-
-      expect(authorized).to eq false
-    end
+    allow(user_attrs_class).to receive(:new).with(user) { user_attrs_class_instance }
+    allow(AuthorizationAttrs::DefaultFinder).to receive(:user_attrs_class) { user_attrs_class }
+    allow(AuthorizationAttrs::DefaultFinder).to receive(:record_attrs_class).with(Foo) { record_attrs_class }
   end
 
   describe ".authorized?" do
-    before do
-      allow(AuthorizationAttrs::SqlDataStore).to receive(:authorizations_match?)
-      allow(IdsFilter).to receive(:filter).with(foo) { [foo.id] }
-    end
-
     it 'should return true if user attributes return :all' do
-      allow_any_instance_of(Authorizations::FooAuthorizations::UserAuthorizationAttrs)
-        .to receive(:bazify) { :all }
+      allow(user_attrs_class_instance).to receive(:bazify) { :all }
 
       authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
 
@@ -100,8 +26,7 @@ describe AuthorizationAttrs do
     end
 
     it 'should return false if user attributes return an empty array' do
-      allow_any_instance_of(Authorizations::FooAuthorizations::UserAuthorizationAttrs)
-        .to receive(:bazify) { [] }
+      allow(user_attrs_class_instance).to receive(:bazify) { [] }
 
       authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
 
@@ -109,40 +34,43 @@ describe AuthorizationAttrs do
     end
 
     it 'should delegate the comparison of attributes to the storage strategy' do
+      allow(user_attrs_class_instance).to receive(:bazify) { "array of user attrs" }
+
       AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
 
       expect(AuthorizationAttrs::SqlDataStore).to have_received(:authorizations_match?).with(
         model: Foo,
-        record_ids: [foo.id],
-        user_attrs: [{ bar_id: 1 }, { taco_id: 90 }]
+        record_ids: "array of record ids",
+        user_attrs: "array of user attrs"
       )
     end
   end
 
   describe '.user_attrs' do
-    it "should generate the authorization attributes data for that user and permission" do
-      attrs = AuthorizationAttrs.user_attrs(:bazify, Foo, user)
+    it "should delegate to the appropriate permission on UserAuthorizationAttrs" do
+      allow(user_attrs_class_instance).to receive(:bazify) { "array of user attrs" }
 
-      expect(attrs).to match_array [{ bar_id: 1 }, { taco_id: 90 }]
+      expect(AuthorizationAttrs.user_attrs(:bazify, Foo, user)).to eq "array of user attrs"
     end
   end
 
-  describe ".model_attrs" do
-    it "should generate the authorization attributes data for that record" do
-      attrs = AuthorizationAttrs.model_attrs(foo)
+  describe ".record_attrs" do
+    it "should delegate to the appropriate user-defined Authorizations module" do
+      allow(record_attrs_class).to receive(:record_attrs).with(foo) { "record attrs" }
 
-      expect(attrs).to match_array [{ bar_id: 1 }, { taco_id: 2 }]
+      expect(AuthorizationAttrs.record_attrs(foo)).to eq "record attrs"
     end
   end
 
   describe ".reset_attrs_for" do
     it "should delegate to the storage strategy" do
+      allow(record_attrs_class).to receive(:record_attrs).with(foo) { "record attrs" }
       allow(AuthorizationAttrs::SqlDataStore).to receive(:reset_attrs_for)
 
       AuthorizationAttrs.reset_attrs_for(foo)
 
       expect(AuthorizationAttrs::SqlDataStore).to have_received(:reset_attrs_for)
-        .with(foo, new_record_attrs: [{ bar_id: 1 }, { taco_id: 2 }])
+        .with(foo, new_record_attrs: "record attrs")
     end
   end
 end

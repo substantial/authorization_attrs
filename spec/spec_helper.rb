@@ -15,5 +15,8 @@ ActiveRecord::Migration.create_table "authorization_attrs" do |t|
 end
 
 ActiveRecord::Migration.add_index(
-  "authorization_attrs", ["authorizable_type", "authorizable_id", "name"], name: "index_on_authorizable_and_name"
+  "authorization_attrs",
+  ["authorizable_type", "authorizable_id", "name"],
+  name: "index_on_authorizable_and_name",
+  unique: true
 )

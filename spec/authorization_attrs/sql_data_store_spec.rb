@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-module AuthorizationAttrs
-  class Foo < ActiveRecord::Base; end
+class Foo < ActiveRecord::Base; end
 
+module AuthorizationAttrs
   describe SqlDataStore do
     before :all do
       ActiveRecord::Migration.suppress_messages do

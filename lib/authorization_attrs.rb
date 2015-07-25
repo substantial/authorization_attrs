@@ -19,16 +19,16 @@ module AuthorizationAttrs
     )
   end
 
-  def self.user_attrs(permission, klass, user)
-    finder.user_attrs_class(klass).new(user).public_send(permission)
+  def self.user_attrs(permission, model, user)
+    finder.user_attrs_class(model).new(user).public_send(permission)
   end
 
-  def self.model_attrs(record)
-    finder.model_attrs_class(record.class).model_attrs(record)
+  def self.record_attrs(record)
+    finder.record_attrs_class(record.class).record_attrs(record)
   end
 
   def self.reset_attrs_for(record)
-    storage_strategy.reset_attrs_for(record, new_record_attrs: model_attrs(record))
+    storage_strategy.reset_attrs_for(record, new_record_attrs: record_attrs(record))
   end
 
   def self.storage_strategy

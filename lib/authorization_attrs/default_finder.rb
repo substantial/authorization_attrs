@@ -4,7 +4,7 @@ module AuthorizationAttrs
       "Authorizations::#{klass}Authorizations::UserAuthorizationAttrs".constantize
     end
 
-    def self.model_attrs_class(klass)
+    def self.record_attrs_class(klass)
       "Authorizations::#{klass}Authorizations".constantize
     end
   end
