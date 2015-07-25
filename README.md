@@ -72,52 +72,50 @@ with authorizations by placing a `#{Model}Authorizations` module under
 
 ```ruby app/models/authorizations
 module GroupAuthorizations
-  # .model_attrs declares how Group instances should generate their own
+  # .record_attrs declares how Group instances should generate their own
   # list of authorization attributes. Once these attributes are declared, they
   # never need to be changed unless new attributes are being added.
 
-  def self.model_attrs(group)
+  def self.record_attrs(group)
     [
       { group_id: group.id },
       { organization_id: group.organization_id }
     ]
   end
 
-  class UserAuthorizationAttrs
-    def initialize(user)
-      @user = user
-    end
+  def initialize(user)
+    @user = user
+  end
 
-    # Define your permission logic:
+  # Define your permission logic:
 
-    def edit
-      return :all if user.super_admin?
+  def edit
+    return :all if user.super_admin?
 
-      [admined_by_user, in_org_admined_by_user].flatten
-    end
+    [admined_by_user, in_org_admined_by_user].flatten
+  end
 
-    private
+  private
 
-    attr_reader :user
+  attr_reader :user
 
-    def admined_by_user
-      admined_group_ids.map { |id| { group_id: id } }
-    end
+  def admined_by_user
+    admined_group_ids.map { |id| { group_id: id } }
+  end
 
-    def in_org_admined_by_user
-      admined_org_ids.map { |id| { organization_id: id } }
-    end
+  def in_org_admined_by_user
+    admined_org_ids.map { |id| { organization_id: id } }
+  end
 
-    def admined_group_ids
-      GroupUser.where(user: user, admin: true).pluck(:group_id)
-    end
+  def admined_group_ids
+    GroupUser.where(user: user, admin: true).pluck(:group_id)
+  end
 
-    def admined_org_ids
-      OrganizationUser.where(
-        user: user,
-        organization_admin: true
-      ).pluck(:organization_id)
-    end
+  def admined_org_ids
+    OrganizationUser.where(
+      user: user,
+      organization_admin: true
+    ).pluck(:organization_id)
   end
 end
 ```
@@ -180,10 +178,8 @@ Nil will also be interpreted as denying access.
 
 ```ruby
 module PostAuthorizations
-  class UserAuthorizationAttrs
-    def delete
-      return :all if user.super_admin?
-    end
+  def delete
+    return :all if user.super_admin?
   end
 end
 ```

@@ -7,18 +7,18 @@ module AuthorizationAttrs
     end
 
     describe ".record_attrs_class" do
-      it "should return the appropriate class to find .model_attrs" do
-        model_attrs_class = double(:model_attrs_class)
-        stub_const "Authorizations::BarAuthorizations", model_attrs_class
+      it "should return the appropriate class to find .record_attrs" do
+        record_attrs_class = double(:record_attrs_class)
+        stub_const "Authorizations::BarAuthorizations", record_attrs_class
 
-        expect(DefaultFinder.record_attrs_class(Bar)).to eq model_attrs_class
+        expect(DefaultFinder.record_attrs_class(Bar)).to eq record_attrs_class
       end
     end
 
     describe ".user_attrs_class" do
       it "should return the appropriate class to find #user_attrs" do
         user_attrs_class = double(:user_attrs_class)
-        stub_const "Authorizations::BarAuthorizations::UserAuthorizationAttrs",
+        stub_const "Authorizations::BarAuthorizations",
           user_attrs_class
 
         expect(DefaultFinder.user_attrs_class(Bar)).to eq user_attrs_class

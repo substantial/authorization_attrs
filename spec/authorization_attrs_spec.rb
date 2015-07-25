@@ -47,7 +47,7 @@ describe AuthorizationAttrs do
   end
 
   describe '.user_attrs' do
-    it "should delegate to the appropriate permission on UserAuthorizationAttrs" do
+    it "should delegate to a permission on the appropriate user-defined Authorizations class" do
       allow(user_attrs_class_instance).to receive(:bazify) { "array of user attrs" }
 
       expect(AuthorizationAttrs.user_attrs(:bazify, Foo, user)).to eq "array of user attrs"
@@ -55,7 +55,7 @@ describe AuthorizationAttrs do
   end
 
   describe ".record_attrs" do
-    it "should delegate to the appropriate user-defined Authorizations module" do
+    it "should delegate to the appropriate user-defined Authorizations class" do
       allow(record_attrs_class).to receive(:record_attrs).with(foo) { "record attrs" }
 
       expect(AuthorizationAttrs.record_attrs(foo)).to eq "record attrs"

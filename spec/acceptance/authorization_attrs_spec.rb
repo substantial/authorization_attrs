@@ -3,7 +3,7 @@ require 'spec_helper'
 class Foo < ActiveRecord::Base; end
 
 module Authorizations
-  module FooAuthorizations
+  class FooAuthorizations
     def self.record_attrs(foo)
       [
         { bar_id: foo.bar_id },
@@ -11,22 +11,20 @@ module Authorizations
       ]
     end
 
-    class UserAuthorizationAttrs
-      def initialize(user)
-        @user = user
-      end
-
-      def bazify
-        [
-          { bar_id: user.bar_id },
-          { taco_id: user.taco_id }
-        ]
-      end
-
-      private
-
-      attr_reader :user
+    def initialize(user)
+      @user = user
     end
+
+    def bazify
+      [
+        { bar_id: user.bar_id },
+        { taco_id: user.taco_id }
+      ]
+    end
+
+    private
+
+    attr_reader :user
   end
 end
 
