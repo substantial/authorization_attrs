@@ -1,5 +1,5 @@
 require "authorization_attrs/version"
-require "authorization_attrs/sql_data_store"
+require "authorization_attrs/active_record_storage_strategy"
 require "authorization_attrs/default_finder"
 require "authorization_attrs/ids_filter"
 
@@ -40,7 +40,7 @@ module AuthorizationAttrs
   end
 
   def self.storage_strategy
-    SqlDataStore
+    ActiveRecordStorageStrategy
   end
 
   def self.finder

@@ -1,7 +1,7 @@
 require 'authorization_attrs/retry'
 
 module AuthorizationAttrs
-  class SqlDataStore
+  class ActiveRecordStorageStrategy
     include Retry
 
     def self.authorizations_match?(model:, record_ids:, user_attrs:)

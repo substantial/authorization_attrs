@@ -141,11 +141,17 @@ AuthorizationAttrs.find_by_authorization(:edit, Group, user)
 
 ## Setup
 
-AuthorizationAttrs requires a database table and ActiveRecord model to
-function. A Rails generator is available to set these up. 
+Add the gem to your project's Gemfile:
+
+```ruby
+gem 'authorization_attrs'
+```
+
+AuthorizationAttrs requires a database table and (currently) an ActiveRecord model to
+function. A Rails generator is available to make these for you. 
 
 ```
-rails generate authorization_attrs:setup
+$ rails generate authorization_attrs:setup
 ```
 
 Since this authorization framework is dependent upon a separate table,
@@ -199,21 +205,6 @@ def reset_authorization_attrs
   AuthorizationAttrs.reset_attrs_for(self)
 end
 ```
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'authorization_attrs'
-```
-
-And then execute:
-
-```
-$ bundle
-```
-
 
 ## Development
 

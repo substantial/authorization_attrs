@@ -7,8 +7,8 @@ describe AuthorizationAttrs do
   let(:authorizations_class_instance) { double(:authorizations_class_instance) }
 
   before do
-    allow(AuthorizationAttrs::SqlDataStore).to receive(:authorizations_match?)
-    allow(AuthorizationAttrs::SqlDataStore).to receive(:find_by_permission)
+    allow(AuthorizationAttrs::ActiveRecordStorageStrategy).to receive(:authorizations_match?)
+    allow(AuthorizationAttrs::ActiveRecordStorageStrategy).to receive(:find_by_permission)
     allow(IdsFilter).to receive(:filter).with(foo) { "array of record ids" }
 
     allow(authorizations_class).to receive(:new).with(user) { authorizations_class_instance }
@@ -46,7 +46,7 @@ describe AuthorizationAttrs do
 
       AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
 
-      expect(AuthorizationAttrs::SqlDataStore).to have_received(:authorizations_match?).with(
+      expect(AuthorizationAttrs::ActiveRecordStorageStrategy).to have_received(:authorizations_match?).with(
         model: Foo,
         record_ids: "array of record ids",
         user_attrs: "array of user attrs"
@@ -72,7 +72,7 @@ describe AuthorizationAttrs do
 
       AuthorizationAttrs.find_by_permission(:bazify, Foo, user)
 
-      expect(AuthorizationAttrs::SqlDataStore).to have_received(:find_by_permission)
+      expect(AuthorizationAttrs::ActiveRecordStorageStrategy).to have_received(:find_by_permission)
         .with(model: Foo, user_attrs: "array of user attrs")
     end
   end
@@ -96,11 +96,11 @@ describe AuthorizationAttrs do
   describe ".reset_attrs_for" do
     it "should delegate to the storage strategy" do
       allow(authorizations_class).to receive(:record_attrs).with(foo) { "record attrs" }
-      allow(AuthorizationAttrs::SqlDataStore).to receive(:reset_attrs_for)
+      allow(AuthorizationAttrs::ActiveRecordStorageStrategy).to receive(:reset_attrs_for)
 
       AuthorizationAttrs.reset_attrs_for(foo)
 
-      expect(AuthorizationAttrs::SqlDataStore).to have_received(:reset_attrs_for)
+      expect(AuthorizationAttrs::ActiveRecordStorageStrategy).to have_received(:reset_attrs_for)
         .with(foo, new_record_attrs: "record attrs")
     end
   end
