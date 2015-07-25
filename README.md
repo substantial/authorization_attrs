@@ -172,7 +172,7 @@ additional systems on top of ActiveRecord. A search
 engine can index these fields, giving instant support for searching by
 permission without having to rewrite business logic.
 
-For an example of how to write such extensions, consider the following
+For an example of such extensions, consider the following
 implementation for Sunspot:
 
 ```ruby
@@ -189,7 +189,7 @@ def apply_permission_to_search(search, permission, model, user)
 
   return if user_attrs == :all
 
-  serialized_attrs = AuthorizationAttrs.serialize_attrs(user_attrs)
+  serialized_attrs = AuthorizationAttrs::ActiveRecordStorageStrategy.serialize_attrs(user_attrs)
 
   search.with(:authorization_attrs, serialized_attrs)
 end
@@ -241,12 +241,6 @@ def reset_authorization_attrs
   AuthorizationAttrs.reset_attrs_for(self)
 end
 ```
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release` to create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 
