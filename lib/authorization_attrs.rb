@@ -20,11 +20,11 @@ module AuthorizationAttrs
   end
 
   def self.user_attrs(permission, model, user)
-    finder.user_attrs_class(model).new(user).public_send(permission)
+    finder.authorizations_class(model).new(user).public_send(permission)
   end
 
   def self.record_attrs(record)
-    finder.record_attrs_class(record.class).record_attrs(record)
+    finder.authorizations_class(record.class).record_attrs(record)
   end
 
   def self.reset_attrs_for(record)
