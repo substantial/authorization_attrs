@@ -44,81 +44,50 @@ describe "acceptance specs" do
     end
   end
 
-  context "when a single record is queried" do
-    let(:user) { double(:user, bar_id: 1, taco_id: 999) }
-    let(:foo) { Foo.create(bar_id: 1, taco_id: 2) }
+  let(:user) { double(:user, bar_id: 1, taco_id: 2) }
 
-    it 'should return true if one of the attributes overlap' do
-      AuthorizationAttrs.reset_attrs_for(foo)
-
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo.id, user)
-
-      expect(authorized).to eq true
-    end
-
-    it 'can be called with a record' do
-      AuthorizationAttrs.reset_attrs_for(foo)
-
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
-
-      expect(authorized).to eq true
-    end
-
-    it 'should return false if none of the attributes overlap' do
-      allow(user).to receive(:bar_id) { "nope" }
-      allow(user).to receive(:taco_id) { "nope" }
-      AuthorizationAttrs.reset_attrs_for(foo)
-
-      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo.id, user)
-
-      expect(authorized).to eq false
-    end
+  def make_authorized_foo
+    foo = Foo.create(bar_id: 1, taco_id: 999)
+    AuthorizationAttrs.reset_attrs_for(foo)
+    foo
   end
 
-  context "when multiple records are queried" do
-    it 'should return false if all of the records are unauthorized' do
-      first_foo = Foo.create(bar_id: 999, taco_id: 999)
-      second_foo = Foo.create(bar_id: 999, taco_id: 999)
-      user = double(:user, bar_id: 1, taco_id: 50)
+  def make_unauthorized_foo
+    foo = Foo.create(bar_id: 999, taco_id: 999)
+    AuthorizationAttrs.reset_attrs_for(foo)
+    foo
+  end
 
-      AuthorizationAttrs.reset_attrs_for(first_foo)
-      AuthorizationAttrs.reset_attrs_for(second_foo)
+  describe "querying authorizations" do
+    context "when a single record is queried" do
+      it 'should return true if one of the attributes overlap' do
+        expect(AuthorizationAttrs.authorized?(:bazify, Foo, make_authorized_foo, user)).to eq true
+      end
 
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, first_foo, user)).to eq false
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, second_foo, user)).to eq false
+      it 'can be called with an id' do
+        expect(AuthorizationAttrs.authorized?(:bazify, Foo, make_authorized_foo.id, user)).to eq true
+      end
 
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, [first_foo, second_foo], user))
-        .to eq false
+      it 'should return false if none of the attributes overlap' do
+        expect(AuthorizationAttrs.authorized?(:bazify, Foo, make_unauthorized_foo, user)).to eq false
+      end
     end
 
-    it 'should return false if any of the records are unauthorized' do
-      first_foo = Foo.create(bar_id: 1, taco_id: 2)
-      second_foo = Foo.create(bar_id: 999, taco_id: 999)
-      user = double(:user, bar_id: 1, taco_id: 50)
+    context "when multiple records are queried" do
+      it 'should return false if all of the records are unauthorized' do
+        expect(AuthorizationAttrs.authorized?(:bazify, Foo, [make_unauthorized_foo, make_unauthorized_foo], user))
+          .to eq false
+      end
 
-      AuthorizationAttrs.reset_attrs_for(first_foo)
-      AuthorizationAttrs.reset_attrs_for(second_foo)
+      it 'should return false if any of the records are unauthorized' do
+        expect(AuthorizationAttrs.authorized?(:bazify, Foo, [make_authorized_foo, make_unauthorized_foo], user))
+          .to eq false
+      end
 
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, first_foo, user)).to eq true
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, second_foo, user)).to eq false
-
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, [first_foo, second_foo], user))
-        .to eq false
-    end
-
-    it 'should return true if all of the records are authorized' do
-      first_foo = Foo.create(bar_id: 1, taco_id: 2)
-      second_foo = Foo.create(bar_id: 999, taco_id: 50)
-      user = double(:user, bar_id: 1, taco_id: 50)
-
-      AuthorizationAttrs.reset_attrs_for(first_foo)
-      AuthorizationAttrs.reset_attrs_for(second_foo)
-
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, first_foo, user)).to eq true
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, second_foo, user)).to eq true
-
-      expect(AuthorizationAttrs.authorized?(:bazify, Foo, [first_foo, second_foo], user))
-        .to eq true
+      it 'should return true if all of the records are authorized' do
+        expect(AuthorizationAttrs.authorized?(:bazify, Foo, [make_authorized_foo, make_authorized_foo], user))
+          .to eq true
+      end
     end
   end
 end
