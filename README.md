@@ -15,7 +15,7 @@ the ability to easily search by permission in a database or search engine.
 ## Example
 
 Say you're working on an application with organizations and groups within them.
-The users permitted to edit a group might be the following group:
+The users permitted to edit a group might be the following:
 
 * Its admins
 * Its organization's admins
@@ -93,13 +93,20 @@ module GroupAuthorizations
     def edit
       return :all if user.super_admin?
 
-      admined_group_ids.map { |id| { group_id: id } } +
-        admined_org_ids.map { |id| { organization_id: id } }
+      [admined_by_user, in_org_admined_by_user].flatten
     end
 
     private
 
     attr_reader :user
+
+    def admined_by_user
+      admined_group_ids.map { |id| { group_id: id } }
+    end
+
+    def in_org_admined_by_user
+      admined_org_ids.map { |id| { organization_id: id } }
+    end
 
     def admined_group_ids
       GroupUser.where(user: user, admin: true).pluck(:group_id)
@@ -134,6 +141,24 @@ To search on permission:
 AuthorizationAttrs.find_by_authorization(:edit, Group, user)
 ```
 
+## Setup
+
+AuthorizationAttrs requires a database table and ActiveRecord model to
+function. A Rails generator is available to set these up. 
+
+```
+rails generate authorization_attrs:setup
+```
+
+Since this authorization framework is dependent upon a separate table,
+attributes must be initialized at the start and recalculated whenever they 
+could be changed. Use the following method to update your authorization
+attributes:
+
+```ruby
+AuthorizationAttrs.reset_attrs_for(self)
+```
+
 ## Attribute Format
 
 Each of the methods defining model or user attributes must output an array of
@@ -163,6 +188,22 @@ module PostAuthorizations
 end
 ```
 
+## Tips
+
+### Reseting attributes
+
+Authorization attributes should almost always be composed from attributes of
+the model itself. As such, `after_save` hooks are usually safe and reasonable
+solutions. 
+
+```ruby
+after_save :reset_authorization_attrs
+
+def reset_authorization_attrs
+  AuthorizationAttrs.reset_attrs_for(self)
+end
+```
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -173,11 +214,10 @@ gem 'authorization_attrs'
 
 And then execute:
 
-    $ bundle
+```
+$ bundle
+```
 
-Or install it yourself as:
-
-    $ gem install authorization_attrs
 
 ## Development
 
