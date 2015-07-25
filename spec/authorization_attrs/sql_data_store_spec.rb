@@ -30,7 +30,7 @@ module AuthorizationAttrs
 
         authorized = SqlDataStore.authorizations_match?(
           model: Foo,
-          record_id: foo.id,
+          record_ids: [foo.id],
           user_attrs: user_attrs
         )
 
@@ -42,7 +42,7 @@ module AuthorizationAttrs
 
         authorized = SqlDataStore.authorizations_match?(
           model: Foo,
-          record_id: foo.id,
+          record_ids: [foo.id],
           user_attrs: user_attrs
         )
 
@@ -54,7 +54,7 @@ module AuthorizationAttrs
 
         authorized = SqlDataStore.authorizations_match?(
           model: Foo,
-          record_id: foo.id,
+          record_ids: [foo.id],
           user_attrs: user_attrs
         )
 

@@ -4,8 +4,8 @@ require "authorization_attrs/default_finder"
 require "authorization_attrs/ids_filter"
 
 module AuthorizationAttrs
-  def self.authorized?(permission, model, record, user)
-    record_id = IdsFilter.filter(record)
+  def self.authorized?(permission, model, records, user)
+    record_ids = IdsFilter.filter(records)
 
     user_attrs = user_attrs(permission, model, user)
 
@@ -14,7 +14,7 @@ module AuthorizationAttrs
 
     storage_strategy.authorizations_match?(
       model: model,
-      record_id: record_id,
+      record_ids: record_ids,
       user_attrs: user_attrs
     )
   end

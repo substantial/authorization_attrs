@@ -1,13 +1,19 @@
 class IdsFilter
-  def self.filter(record)
-    new(record).filter
+  def self.filter(records)
+    new(records).filter
   end
 
-  def initialize(record)
-    @record = record
+  def initialize(records)
+    @records = Array(records)
   end
 
   def filter
+    records.map { |record| convert_to_id(record) }
+  end
+
+  private
+
+  def convert_to_id(record)
     if record.respond_to?(:id)
       record.id
     else
@@ -15,7 +21,5 @@ class IdsFilter
     end
   end
 
-  private
-
-  attr_reader :record
+  attr_reader :records
 end

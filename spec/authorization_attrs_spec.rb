@@ -65,6 +65,14 @@ describe AuthorizationAttrs do
       expect(authorized).to eq true
     end
 
+    it 'can be called with a record' do
+      AuthorizationAttrs.reset_attrs_for(foo)
+
+      authorized = AuthorizationAttrs.authorized?(:bazify, Foo, foo, user)
+
+      expect(authorized).to eq true
+    end
+
     it 'should return false if none of the attributes overlap' do
       allow(user).to receive(:bar_id) { "nope" }
       allow(user).to receive(:taco_id) { "nope" }
@@ -79,7 +87,7 @@ describe AuthorizationAttrs do
   describe ".authorized?" do
     before do
       allow(AuthorizationAttrs::SqlDataStore).to receive(:authorizations_match?)
-      allow(IdsFilter).to receive(:filter).with(foo) { 'foo_id' }
+      allow(IdsFilter).to receive(:filter).with(foo) { [foo.id] }
     end
 
     it 'should return true if user attributes return :all' do
@@ -105,7 +113,7 @@ describe AuthorizationAttrs do
 
       expect(AuthorizationAttrs::SqlDataStore).to have_received(:authorizations_match?).with(
         model: Foo,
-        record_id: 'foo_id',
+        record_ids: [foo.id],
         user_attrs: [{ bar_id: 1 }, { taco_id: 90 }]
       )
     end
