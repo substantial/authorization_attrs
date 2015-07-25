@@ -1,6 +1,8 @@
 require 'spec_helper'
 
-class Foo < ActiveRecord::Base; end
+class Foo < ActiveRecord::Base
+  has_many :authorization_attrs, as: :authorizable
+end
 
 module AuthorizationAttrs
   describe SqlDataStore do
@@ -15,6 +17,8 @@ module AuthorizationAttrs
         ActiveRecord::Migration.drop_table :foos
       end
     end
+
+    let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
 
     def make_full_overlap_foo
       foo = Foo.create
@@ -38,8 +42,6 @@ module AuthorizationAttrs
     end
 
     describe ".authorizations_match?" do
-      let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
-
       def authorizations_match?(record_ids)
         SqlDataStore.authorizations_match?(
           model: Foo,
@@ -74,6 +76,32 @@ module AuthorizationAttrs
         it 'should return false if all of the records are unauthorized' do
           expect(authorizations_match?([make_no_overlap_foo.id, make_no_overlap_foo.id])).to eq false
         end
+      end
+    end
+
+    describe ".find_by_permission" do
+      it "should return an empty array if no records match" do
+        first_foo, second_foo = make_no_overlap_foo, make_no_overlap_foo
+
+        found_records = SqlDataStore.find_by_permission(model: Foo, user_attrs: user_attrs)
+
+        expect(found_records).to eq []
+      end
+
+      it "should immediately return all records without checking attributes if user_attrs equals :all" do
+        first_foo, second_foo = make_no_overlap_foo, make_no_overlap_foo
+
+        found_records = SqlDataStore.find_by_permission(model: Foo, user_attrs: :all)
+
+        expect(found_records).to eq [first_foo, second_foo]
+      end
+
+      it "should return only records that match" do
+        first_foo, second_foo, third_foo = make_no_overlap_foo, make_partial_overlap_foo, make_partial_overlap_foo
+
+        found_records = SqlDataStore.find_by_permission(model: Foo, user_attrs: user_attrs)
+
+        expect(found_records).to eq [second_foo, third_foo]
       end
     end
 
