@@ -17,48 +17,79 @@ module AuthorizationAttrs
     end
 
     describe ".authorizations_match?" do
-      let(:foo) { Foo.create }
-
-      before do
-        attrs = [{ bar_id: 1 }, { taco_id: 2 }]
-
-        SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
-      end
-
-      it 'should return true if multiple attributes overlap' do
-        user_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
-
-        authorized = SqlDataStore.authorizations_match?(
+      def authorizations_match?(record_ids)
+        SqlDataStore.authorizations_match?(
           model: Foo,
-          record_ids: [foo.id],
+          record_ids: record_ids,
           user_attrs: user_attrs
         )
-
-        expect(authorized).to eq true
       end
 
-      it 'should return true if one of the attributes overlap' do
-        user_attrs = [{ bar_id: 1 }, { taco_id: 90 }]
+      context "single records" do
+        let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
+        let(:foo) { Foo.create }
 
-        authorized = SqlDataStore.authorizations_match?(
-          model: Foo,
-          record_ids: [foo.id],
-          user_attrs: user_attrs
-        )
+        it 'should return true if multiple attributes overlap' do
+          attrs = [{ bar_id: 1 }, { taco_id: 2 }]
+          SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
 
-        expect(authorized).to eq true
+          expect(authorizations_match?([foo.id])).to eq true
+        end
+
+        it 'should return true if one of the attributes overlap' do
+          attrs = [{ bar_id: 1 }, { taco_id: 999 }]
+          SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
+
+          expect(authorizations_match?([foo.id])).to eq true
+        end
+
+        it 'should return false if none of the attributes overlap' do
+          attrs = [{ bar_id: 999 }, { taco_id: 999 }]
+          SqlDataStore.reset_attrs_for(foo, new_record_attrs: attrs)
+
+          expect(authorizations_match?([foo.id])).to eq false
+        end
       end
 
-      it 'should return false if none of the attributes overlap' do
-        user_attrs = [{ bar_id: "not a match" }, { taco_id: "not a match" }]
+      context "multiple record ids" do
+        let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
+        let(:first_foo) { Foo.create }
+        let(:second_foo) { Foo.create }
 
-        authorized = SqlDataStore.authorizations_match?(
-          model: Foo,
-          record_ids: [foo.id],
-          user_attrs: user_attrs
-        )
+        it 'should return true if all of the records are authorized' do
+          record_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
+          SqlDataStore.reset_attrs_for(first_foo, new_record_attrs: record_attrs)
+          SqlDataStore.reset_attrs_for(second_foo, new_record_attrs: record_attrs)
 
-        expect(authorized).to eq false
+          expect(authorizations_match?([first_foo.id])).to eq true
+          expect(authorizations_match?([second_foo.id])).to eq true
+          expect(authorizations_match?([first_foo.id, second_foo.id])).to eq true
+        end
+
+        it 'should return false if any of the records are unauthorized' do
+          user_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
+
+          first_foo_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
+          second_foo_attrs = [{ bar_id: 999 }, { taco_id: 999 }]
+          SqlDataStore.reset_attrs_for(first_foo, new_record_attrs: first_foo_attrs)
+          SqlDataStore.reset_attrs_for(second_foo, new_record_attrs: second_foo_attrs)
+
+          expect(authorizations_match?([first_foo.id])).to eq true
+          expect(authorizations_match?([second_foo.id])).to eq false
+          expect(authorizations_match?([first_foo.id, second_foo.id])).to eq false
+        end
+
+        it 'should return false if all of the records are unauthorized' do
+          user_attrs = [{ bar_id: 1 }, { taco_id: 50 }]
+
+          record_attrs = [{ bar_id: 999 }, { taco_id: 999 }]
+          SqlDataStore.reset_attrs_for(first_foo, new_record_attrs: record_attrs)
+          SqlDataStore.reset_attrs_for(second_foo, new_record_attrs: record_attrs)
+
+          expect(authorizations_match?([first_foo.id])).to eq false
+          expect(authorizations_match?([second_foo.id])).to eq false
+          expect(authorizations_match?([first_foo.id, second_foo.id])).to eq false
+        end
       end
     end
 

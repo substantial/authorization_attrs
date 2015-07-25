@@ -9,7 +9,7 @@ module AuthorizationAttrs
         authorizable_type: model,
         authorizable_id: record_ids,
         name: serialize_attrs(user_attrs)
-      ).any?
+      ).pluck(:authorizable_id).uniq.count == record_ids.size
     end
 
     def self.reset_attrs_for(record, new_record_attrs:)
