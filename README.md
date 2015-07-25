@@ -133,6 +133,8 @@ AuthorizedAttrs.authorized?(:edit, Group, group_id, user)
 AuthorizedAttrs.authorized?(:edit, Group, [group_ids], user)
 ```
 
+ActiveRecord models will also work in place of ids.
+
 To search by permission:
 
 ```ruby
@@ -161,6 +163,40 @@ attributes:
 
 ```ruby
 AuthorizationAttrs.reset_attrs_for(self)
+```
+
+## Extensions
+
+The other strong advantage of this approach is that it is easily extensible to
+additional systems on top of ActiveRecord. A search
+engine can index these fields, giving instant support for searching by
+permission without having to rewrite business logic.
+
+For an example of how to write such extensions, consider the following
+implementation for Sunspot:
+
+```ruby
+class Organization
+  searchable do
+    string :authorization_attrs, multiple: true do
+      AuthorizationAttr.where(authorizable: self).pluck(:name)
+    end
+  end
+end
+
+def apply_permission_to_search(search, permission, model, user)
+  user_attrs = AuthorizationAttrs.user_attrs(permission, model, user)
+
+  return if user_attrs == :all
+
+  serialized_attrs = AuthorizationAttrs.serialize_attrs(user_attrs)
+
+  search.with(:authorization_attrs, serialized_attrs)
+end
+
+Organization.search do |search|
+  apply_permission_to_search(search, :view, Organization, current_user)
+end
 ```
 
 ## Attribute Format
