@@ -3,6 +3,8 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'authorization_attrs'
 require 'active_record'
 require 'rspec/active_model/mocks'
+require 'database_cleaner'
+
 require 'pry'
 
 ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
@@ -23,5 +25,18 @@ ActiveRecord::Migration.suppress_messages do
     name: "index_on_authorizable_and_name",
     unique: true
   )
+end
+
+RSpec.configure do |config|
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
 end
 
