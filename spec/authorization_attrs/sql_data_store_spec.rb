@@ -1,23 +1,23 @@
 require 'spec_helper'
 
 module AuthorizationAttrs
-  class FooAttrTestClass < ActiveRecord::Base; end
+  class Foo < ActiveRecord::Base; end
 
   describe SqlDataStore do
     before :all do
       ActiveRecord::Migration.suppress_messages do
-        ActiveRecord::Migration.create_table :foo_attr_test_classes, temporary: true
+        ActiveRecord::Migration.create_table :foos, temporary: true
       end
     end
 
     after :all do
       ActiveRecord::Migration.suppress_messages do
-        ActiveRecord::Migration.drop_table :foo_attr_test_classes
+        ActiveRecord::Migration.drop_table :foos
       end
     end
 
     describe ".authorizations_match?" do
-      let(:foo) { FooAttrTestClass.create }
+      let(:foo) { Foo.create }
 
       before do
         attrs = [{ bar_id: 1 }, { taco_id: 2 }]
@@ -29,7 +29,8 @@ module AuthorizationAttrs
         user_attrs = [{ bar_id: 1 }, { taco_id: 2 }]
 
         authorized = SqlDataStore.authorizations_match?(
-          record: foo,
+          model: Foo,
+          record_id: foo.id,
           user_attrs: user_attrs
         )
 
@@ -40,7 +41,8 @@ module AuthorizationAttrs
         user_attrs = [{ bar_id: 1 }, { taco_id: 90 }]
 
         authorized = SqlDataStore.authorizations_match?(
-          record: foo,
+          model: Foo,
+          record_id: foo.id,
           user_attrs: user_attrs
         )
 
@@ -51,7 +53,8 @@ module AuthorizationAttrs
         user_attrs = [{ bar_id: "not a match" }, { taco_id: "not a match" }]
 
         authorized = SqlDataStore.authorizations_match?(
-          record: foo,
+          model: Foo,
+          record_id: foo.id,
           user_attrs: user_attrs
         )
 
@@ -120,9 +123,9 @@ module AuthorizationAttrs
       let(:attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
 
       it "should not affect authorization attributes if they haven't changed" do
-        foo = FooAttrTestClass.create
+        foo = Foo.create
 
-        allow(FooAttrTestClass).to receive(:create)
+        allow(Foo).to receive(:create)
 
         AuthorizationAttr.create(authorizable: foo, name: "bar_id=1")
         AuthorizationAttr.create(authorizable: foo, name: "taco_id=2")
@@ -131,12 +134,12 @@ module AuthorizationAttrs
 
         new_attrs = AuthorizationAttr.where(authorizable: foo).map(&:name)
 
-        expect(FooAttrTestClass).not_to have_received(:create)
+        expect(Foo).not_to have_received(:create)
         expect(new_attrs).to match_array ["bar_id=1", "taco_id=2"]
       end
 
       it "should add any new attributes" do
-        foo = FooAttrTestClass.create
+        foo = Foo.create
 
         AuthorizationAttr.create(authorizable: foo, name: "bar_id=1")
 
@@ -148,9 +151,9 @@ module AuthorizationAttrs
       end
 
       it "should remove any old attributes" do
-        foo = FooAttrTestClass.create
+        foo = Foo.create
 
-        allow(FooAttrTestClass).to receive(:create)
+        allow(Foo).to receive(:create)
 
         AuthorizationAttr.create(authorizable: foo, name: "bar_id=1")
         AuthorizationAttr.create(authorizable: foo, name: "taco_id=2")
@@ -160,7 +163,7 @@ module AuthorizationAttrs
 
         new_attrs = AuthorizationAttr.where(authorizable: foo).map(&:name)
 
-        expect(FooAttrTestClass).not_to have_received(:create)
+        expect(Foo).not_to have_received(:create)
         expect(new_attrs).to match_array ["bar_id=1", "taco_id=2"]
       end
     end

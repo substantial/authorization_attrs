@@ -4,9 +4,10 @@ module AuthorizationAttrs
   class SqlDataStore
     include Retry
 
-    def self.authorizations_match?(record:, user_attrs:)
+    def self.authorizations_match?(model:, record_id:, user_attrs:)
       AuthorizationAttr.where(
-        authorizable: record,
+        authorizable_type: model,
+        authorizable_id: record_id,
         name: serialize_attrs(user_attrs)
       ).any?
     end
