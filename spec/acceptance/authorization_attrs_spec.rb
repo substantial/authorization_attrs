@@ -47,7 +47,7 @@ describe "acceptance specs" do
   end
 
   context "when a single record is queried" do
-    let(:user) { double(:user, bar_id: 1, taco_id: 90) }
+    let(:user) { double(:user, bar_id: 1, taco_id: 999) }
     let(:foo) { Foo.create(bar_id: 1, taco_id: 2) }
 
     it 'should return true if one of the attributes overlap' do

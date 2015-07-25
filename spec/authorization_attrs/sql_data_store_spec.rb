@@ -17,6 +17,8 @@ module AuthorizationAttrs
     end
 
     describe ".authorizations_match?" do
+      let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
+
       def authorizations_match?(record_ids)
         SqlDataStore.authorizations_match?(
           model: Foo,
@@ -26,7 +28,6 @@ module AuthorizationAttrs
       end
 
       context "single records" do
-        let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
         let(:foo) { Foo.create }
 
         it 'should return true if multiple attributes overlap' do
@@ -52,7 +53,6 @@ module AuthorizationAttrs
       end
 
       context "multiple record ids" do
-        let(:user_attrs) { [{ bar_id: 1 }, { taco_id: 2 }] }
         let(:first_foo) { Foo.create }
         let(:second_foo) { Foo.create }
 

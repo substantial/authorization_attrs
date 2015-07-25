@@ -8,7 +8,7 @@ class IdsFilter
   end
 
   def filter
-    records.map { |record| convert_to_id(record) }
+    records.map { |record| convert_to_id(record) }.uniq
   end
 
   private

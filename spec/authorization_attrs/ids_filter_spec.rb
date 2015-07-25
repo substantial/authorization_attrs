@@ -26,4 +26,10 @@ describe IdsFilter do
 
     expect(IdsFilter.filter(records)).to eq [2, 3]
   end
+
+  it "should remove duplicate ids" do
+    records = [1, 2, 2, 2, 3, 3]
+
+    expect(IdsFilter.filter(records)).to eq [1, 2, 3]
+  end
 end
