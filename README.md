@@ -67,11 +67,11 @@ comparing any attributes.
 ## Usage
 
 To use authorization_attrs, you can automatically associate each of your models
-with authorizations by placing a `#{Model}Authorizations` module under
-`app/models/authorizations`.
+with authorizations by placing a `#{Model}Authorizations` class within your
+autoload path.
 
-```ruby app/models/authorizations
-module GroupAuthorizations
+```ruby
+class Authorizations::GroupAuthorizations
   # .record_attrs declares how Group instances should generate their own
   # list of authorization attributes. Once these attributes are declared, they
   # never need to be changed unless new attributes are being added.
