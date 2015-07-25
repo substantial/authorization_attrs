@@ -8,6 +8,7 @@ describe AuthorizationAttrs do
 
   before do
     allow(AuthorizationAttrs::SqlDataStore).to receive(:authorizations_match?)
+    allow(AuthorizationAttrs::SqlDataStore).to receive(:find_by_permission)
     allow(IdsFilter).to receive(:filter).with(foo) { "array of record ids" }
 
     allow(authorizations_class).to receive(:new).with(user) { authorizations_class_instance }
@@ -42,6 +43,17 @@ describe AuthorizationAttrs do
         record_ids: "array of record ids",
         user_attrs: "array of user attrs"
       )
+    end
+  end
+
+  describe ".find_by_permission" do
+    it "should delegate to the storage_strategy" do
+      allow(authorizations_class_instance).to receive(:bazify) { "array of user attrs" }
+
+      AuthorizationAttrs.find_by_permission(:bazify, Foo, user)
+
+      expect(AuthorizationAttrs::SqlDataStore).to have_received(:find_by_permission)
+        .with(model: Foo, user_attrs: "array of user attrs")
     end
   end
 

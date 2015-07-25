@@ -133,7 +133,7 @@ AuthorizedAttrs.authorized?(:edit, Group, group_id, user)
 AuthorizedAttrs.authorized?(:edit, Group, [group_ids], user)
 ```
 
-To search on permission:
+To search by permission:
 
 ```ruby
 AuthorizationAttrs.find_by_authorization(:edit, Group, user)

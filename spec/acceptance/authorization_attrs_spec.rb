@@ -90,4 +90,22 @@ describe "acceptance specs" do
       end
     end
   end
+
+  describe "finding records by permission" do
+    it "should return an empty array if no records match" do
+      first_foo, second_foo = make_unauthorized_foo, make_unauthorized_foo
+
+      found_records = AuthorizationAttrs.find_by_permission(:bazify, Foo, user)
+
+      expect(found_records).to eq []
+    end
+
+    it "should return only records that match" do
+      first_foo, second_foo, third_foo = make_unauthorized_foo, make_authorized_foo, make_unauthorized_foo
+
+      found_records = AuthorizationAttrs.find_by_permission(:bazify, Foo, user)
+
+      expect(found_records).to eq [second_foo]
+    end
+  end
 end

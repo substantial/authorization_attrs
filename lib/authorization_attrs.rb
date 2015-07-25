@@ -19,6 +19,12 @@ module AuthorizationAttrs
     )
   end
 
+  def self.find_by_permission(permission, model, user)
+    user_attrs = user_attrs(permission, model, user)
+
+    storage_strategy.find_by_permission(model: model, user_attrs: user_attrs)
+  end
+
   def self.user_attrs(permission, model, user)
     finder.authorizations_class(model).new(user).public_send(permission)
   end
