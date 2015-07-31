@@ -32,4 +32,10 @@ describe IdsFilter do
 
     expect(IdsFilter.filter(records)).to eq [1, 2, 3]
   end
+
+  it "should raise an error if given an empty array for ids" do
+    records = []
+
+    expect { IdsFilter.filter(records) }.to raise_error ArgumentError
+  end
 end

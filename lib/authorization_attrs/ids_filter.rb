@@ -8,6 +8,8 @@ class IdsFilter
   end
 
   def filter
+    raise ArgumentError, "Please supply an array of ids" if records.empty?
+
     records.map { |record| convert_to_id(record) }.uniq
   end
 
