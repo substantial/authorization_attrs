@@ -14,6 +14,7 @@ end
 class Article < ActiveRecord::Base
   belongs_to :owner, class_name: "User", foreign_key: :owner_id
   belongs_to :group
+  has_many :authorization_attrs, as: :authorizable
 end
 
 class GroupUser < ActiveRecord::Base
@@ -105,8 +106,8 @@ class AuthorizationBenchmarks
 
   def execute
     benchmarks = [
-      :single_record_without_required_db_access,
-      :single_record_with_required_db_access
+      :without_required_db_access,
+      :with_required_db_access
     ]
 
     DatabaseCleaner.strategy = :transaction
@@ -114,34 +115,50 @@ class AuthorizationBenchmarks
     benchmarks.each do |bm|
       DatabaseCleaner.cleaning do
         send(bm)
+        puts "\n"
       end
     end
   end
 
   private
 
-  def single_record_without_required_db_access
+  def without_required_db_access
     users = 10.times.map { User.create(name: "Anybody") }
     users.each do |user|
       10.times.map { Article.create(title: "Tacos", owner: user, public: false) }
       10.times.map { Article.create(title: "Tacos", owner: user, public: true) }
     end
 
-    user = users.first.reload
-    article = Article.where(public: false, owner: user).first
+    first_user = users.first.reload
+    first_user_articles = Article.where(public: false, owner: first_user)
+    first_article = first_user_articles.first
 
     Article.find_each do |article|
       AuthorizationAttrs.reset_attrs_for(article)
     end
 
-    puts "When direct comparison does not hit the database"
+    puts "When direct comparison does not hit the database\n\n"
+
+    puts "\t single record authorization"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.edit(article, user) }
-      t.report("direct") { ComparisonStrategy.edit(article, user) }
+      t.report("attrs") { AttrStrategy.edit(first_article, first_user) }
+      t.report("direct") { ComparisonStrategy.edit(first_article, first_user) }
+    end
+
+    puts "\t multiple record authorization"
+    Benchmark.bm(7) do |t|
+      t.report("attrs") { AttrStrategy.edit_multiple(first_user_articles, first_user) }
+      t.report("direct") { ComparisonStrategy.edit_multiple(first_user_articles, first_user) }
+    end
+
+    puts "\t searching by permission"
+    Benchmark.bm(7) do |t|
+      t.report("attrs") { AttrStrategy.edit_search(first_user) }
+      t.report("direct") { ComparisonStrategy.edit_search(first_user) }
     end
   end
 
-  def single_record_with_required_db_access
+  def with_required_db_access
     users = 10.times.map { User.create(name: "Anybody") }
     groups = 10.times.map { Group.create(name: "Cool People") }
 
@@ -153,18 +170,44 @@ class AuthorizationBenchmarks
       end
     end
 
-    first_user = users.first.reload
-    last_user = users.last.reload
-    article = Article.where(public: false, owner: last_user).first
+    available_group = groups.first.reload
+    off_limits_group = groups.last.reload
+
+    test_user = users.first.reload
+    different_user = users.last.reload
+    test_user.group_users.where(group: off_limits_group).destroy_all
+
+    available_articles =  Article.where(public: false, owner: different_user, group: available_group)
+    unavailable_articles =  Article.where(public: false, owner: different_user, group: off_limits_group)
 
     Article.find_each do |article|
       AuthorizationAttrs.reset_attrs_for(article)
     end
 
-    puts "When direct comparison hits the database"
+    puts "When direct comparison hits the database\n\n"
+
+    puts "\t single record authorization"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.view(article, first_user) }
-      t.report("direct") { ComparisonStrategy.view(article, first_user) }
+      t.report("attrs") { AttrStrategy.view(available_articles.first, test_user) }
+      t.report("direct") { ComparisonStrategy.view(available_articles.first, test_user) }
+    end
+
+    puts "\t multiple record authorization - none match (fastest for direct)"
+    Benchmark.bm(7) do |t|
+      t.report("attrs") { AttrStrategy.view_multiple(unavailable_articles, test_user) }
+      t.report("direct") { ComparisonStrategy.view_multiple(unavailable_articles, test_user) }
+    end
+
+    puts "\t multiple record authorization - all match (slowest for direct)"
+    Benchmark.bm(7) do |t|
+      t.report("attrs") { AttrStrategy.view_multiple(available_articles, test_user) }
+      t.report("direct") { ComparisonStrategy.view_multiple(available_articles, test_user) }
+    end
+
+    puts "\t searching by permission"
+    Benchmark.bm(7) do |t|
+      t.report("attrs") { AttrStrategy.view_search(test_user) }
+      t.report("direct") { ComparisonStrategy.view_search(test_user) }
     end
   end
 
@@ -175,6 +218,22 @@ class AuthorizationBenchmarks
 
     def self.edit(article, user)
       AuthorizationAttrs.authorized?(:edit, Article, article.id, user)
+    end
+
+    def self.view_multiple(articles, user)
+      AuthorizationAttrs.authorized?(:view, Article, articles.map(&:id), user)
+    end
+
+    def self.edit_multiple(articles, user)
+      AuthorizationAttrs.authorized?(:edit, Article, articles.map(&:id), user)
+    end
+
+    def self.view_search(user)
+      AuthorizationAttrs.find_by_permission(:view, Article, user)
+    end
+
+    def self.edit_search(user)
+      AuthorizationAttrs.find_by_permission(:edit, Article, user)
     end
   end
 
@@ -187,6 +246,22 @@ class AuthorizationBenchmarks
 
     def self.edit(article, user)
       article.public || user.id == article.owner_id
+    end
+
+    def self.view_multiple(articles, user)
+      articles.all? { |article| view(article, user) }
+    end
+
+    def self.edit_multiple(articles, user)
+      articles.all? { |article| edit(article, user) }
+    end
+
+    def self.view_search(user)
+      Article.all.to_a.select { |article| view(article, user) }
+    end
+
+    def self.edit_search(user)
+      Article.all.to_a.select { |article| edit(article, user) }
     end
   end
 end
