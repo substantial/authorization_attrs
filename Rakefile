@@ -1,8 +1,8 @@
 require "bundler/gem_tasks"
 
-task :benchmark do
-  require './benchmarks/authorization_benchmarks.rb'
+task :benchmarks do
+  require './benchmarks/authorization_attrs_benchmarks.rb'
 
-  AuthorizationBenchmarks.execute
+  AuthorizationAttrsBenchmarks.execute
 end
 

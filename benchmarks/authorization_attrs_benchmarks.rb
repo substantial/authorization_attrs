@@ -99,7 +99,7 @@ module Authorizations
   end
 end
 
-class AuthorizationBenchmarks
+class AuthorizationAttrsBenchmarks
   def self.execute
     new.execute
   end
