@@ -139,15 +139,14 @@ class AuthorizationBenchmarks
 
     test_user = users.first.reload
     available_article_ids = Article.where(public: false, owner: test_user).pluck(:id)
-    first_available_article_id = available_article_ids.first
 
     Article.find_each do |article|
       AuthorizationAttrs.reset_attrs_for(article)
     end
 
-    puts "When direct comparison does not hit the database\n\n"
+    puts "When direct comparison rarely hits the database\n\n"
 
-    perform_benchmark(:edit, "single record authorization", first_available_article_id, test_user)
+    perform_benchmark(:edit, "single record authorization", available_article_ids.first, test_user)
     perform_benchmark(:edit_multiple, "multiple record authorization", available_article_ids, test_user)
     perform_benchmark(:edit_search, "search by permission", test_user)
   end
@@ -178,7 +177,7 @@ class AuthorizationBenchmarks
       AuthorizationAttrs.reset_attrs_for(article)
     end
 
-    puts "When direct comparison hits the database\n\n"
+    puts "When direct comparison frequently hits the database\n\n"
 
     perform_benchmark(:view, "single record authorization", available_article_ids.first, test_user)
     perform_benchmark(:view_multiple, "multiple record authorization - none match (fastest for direct)", unavailable_article_ids, test_user)
