@@ -31,7 +31,9 @@ def can_edit?(user, group)
 end
 ```
 
-This logic will work, but locks us into the need for a specific record to test against.
+This logic will work, but is less extensible because it defines a single method
+of comparison between two objects. If instead we define the *relationships* between 
+users and groups in general, it would be possible to write any comparison we want. 
 
 If we flip the logic around and define which groups a given user can edit, they are:
 
@@ -71,17 +73,19 @@ with authorizations by placing a `#{Model}Authorizations` class within your
 autoload path.
 
 ```ruby
-class Authorizations::GroupAuthorizations
-  # .record_attrs declares how Group instances should generate their own
-  # list of authorization attributes. Once these attributes are declared, they
-  # never need to be changed unless new attributes are being added.
+class Authorizations::ArticleAuthorizations
+  # .record_attrs declares how Article instances should generate their own
+  # list of authorization attributes. Each type of attribute must exist on the
+  # records in order for them to be queried against.
 
-  def self.record_attrs(group)
+  def self.record_attrs(article)
     [
-      { group_id: group.id },
-      { organization_id: group.organization_id }
+      { public: article.public? },
+      { author_id: article.author_id }
     ]
   end
+
+  # This class is instantiated with a user when user attributes are retrieved.
 
   def initialize(user)
     @user = user
@@ -90,55 +94,84 @@ class Authorizations::GroupAuthorizations
   # Define your permission logic:
 
   def edit
-    return :all if user.super_admin?
+    # Admins can edit all articles.
 
-    [admined_by_user, in_org_admined_by_user].flatten
+    return :all if user.admin?
+
+    # Other users can edit public articles or articles they authored.
+
+    [
+      { public: true },
+      { author_id: user.id }
+    ]
   end
 
   private
 
   attr_reader :user
-
-  def admined_by_user
-    admined_group_ids.map { |id| { group_id: id } }
-  end
-
-  def in_org_admined_by_user
-    admined_org_ids.map { |id| { organization_id: id } }
-  end
-
-  def admined_group_ids
-    GroupUser.where(user: user, admin: true).pluck(:group_id)
-  end
-
-  def admined_org_ids
-    OrganizationUser.where(
-      user: user,
-      organization_admin: true
-    ).pluck(:organization_id)
-  end
 end
 ```
 
-This logic is more broadly phrased and can now be applied in a record-agnostic
-fashion.
+This logic is record-agnostic and as such can be applied to one, many, or all
+records.
 
 To test authorizations:
 
 ```ruby
 # returns true if authorized
-AuthorizedAttrs.authorized?(:edit, Group, group_id, user)
+AuthorizedAttrs.authorized?(:edit, Article, article_id, user)
 
 # returns true only if all records are authorized
-AuthorizedAttrs.authorized?(:edit, Group, [group_ids], user)
+AuthorizedAttrs.authorized?(:edit, Article, array_of_article_ids, user)
 ```
 
-ActiveRecord models will also work in place of ids.
+ActiveRecord model instances will also work in place of ids.
 
 To search by permission:
 
 ```ruby
-AuthorizationAttrs.find_by_authorization(:edit, Group, user)
+AuthorizationAttrs.find_by_authorization(:edit, Article, user)
+```
+
+In order to use searching by permission, add the following relation to your
+model:
+
+```ruby
+has_many :authorization_attrs, as: :authorizable
+```
+
+Some of this functionality may be attainable through cleverly written SQL
+queries, removing the need for a separate table of authorization attributes.
+The drawback to such an approach is that they may not be reusable for all
+cases, query logic can quickly get out of hand while consuming developer time,
+and such an approach would not allow exporting these authorizations into a
+separate service such as a search engine.
+
+## Attribute Format
+
+Each of the methods defining model or user attributes must output an array of
+hashes. Each hash represents a single authorization attribute which
+would be sufficient to authorize the permission for a given record.
+
+Hashes with more than a single key/value pair represent compound attributes such as
+needing to be both a member of a post's containing group and the owner of
+a post (key order is irrelevant):
+
+```ruby
+{ group_id: post.group.id, id: post.owner.id }
+```
+
+You may find that comparing attributes is unnecessary if user-centric attributes
+can completely resolve the permission. In these cases, return `:all` to grant
+universal access for that permission or an empty array to deny access. 
+Nil will also be interpreted as denying access. 
+
+```ruby
+module PostAuthorizations
+  def delete
+    return :all if user.super_admin?
+  end
+end
 ```
 
 ## Setup
@@ -196,33 +229,6 @@ end
 
 Organization.search do |search|
   apply_permission_to_search(search, :view, Organization, current_user)
-end
-```
-
-## Attribute Format
-
-Each of the methods defining model or user attributes must output an array of
-hashes. Each hash represents a single authorization attribute which
-would be sufficient to authorize the permission for a given record.
-
-Hashes with more than a single key/value pair represent compound attributes such as
-needing to be both a member of a post's containing group and the owner of
-a post (key order is irrelevant):
-
-```ruby
-{ group_id: post.group.id, id: post.owner.id }
-```
-
-You may find that comparing attributes is unnecessary if user-centric attributes
-can completely resolve the permission. In these cases, return `:all` to grant
-universal access for that permission or an empty array to deny access. 
-Nil will also be interpreted as denying access. 
-
-```ruby
-module PostAuthorizations
-  def delete
-    return :all if user.super_admin?
-  end
 end
 ```
 
