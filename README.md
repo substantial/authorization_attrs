@@ -198,6 +198,31 @@ attributes:
 AuthorizationAttrs.reset_attrs_for(self)
 ```
 
+## Benchmarks
+
+Benchmarks exist to help identify weaknesses in the code base and help
+developers make decisions about where this framework may be helpful. Run them
+with:
+
+```
+$ rake benchmarks
+```
+
+General summaries of current benchmarks: 
+
+- Since authorizations are done as a full SQL query, they cannot terminate early
+  once the query begins. It also means that they are subject to less variance
+  in performance than typical direct comparisons.
+- Checking permissions on a single record can be slower than equivalent direct 
+  comparisons, though not greatly.
+- Testing on multiple records is approximately as fast as testing a single
+  record. Compared to equivalent iterative direct comparisons, this ranges from similar
+  to much faster.
+- Searching by permission is faster than authorizing a single record.
+  An equivalent iterative direct comparison is entirely unfeasible.
+
+Pull requests to add more benchmarks are welcomed. 
+
 ## Extensions
 
 The other strong advantage of this approach is that it is easily extensible to
