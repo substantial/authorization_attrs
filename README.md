@@ -200,7 +200,7 @@ AuthorizationAttrs.reset_attrs_for(self)
 
 ## Benchmarks
 
-Benchmarks exist to help identify weaknesses in the code base and help
+Benchmarks are available to help identify weaknesses in the code base and help
 developers make decisions about where this framework may be helpful. Run them
 with:
 
