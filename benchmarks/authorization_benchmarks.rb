@@ -129,9 +129,9 @@ class AuthorizationBenchmarks
       10.times.map { Article.create(title: "Tacos", owner: user, public: true) }
     end
 
-    first_user = users.first.reload
-    first_user_articles = Article.where(public: false, owner: first_user)
-    first_article = first_user_articles.first
+    test_user = users.first.reload
+    available_article_ids = Article.where(public: false, owner: test_user).pluck(:id)
+    first_available_article_id = available_article_ids.first
 
     Article.find_each do |article|
       AuthorizationAttrs.reset_attrs_for(article)
@@ -141,20 +141,20 @@ class AuthorizationBenchmarks
 
     puts "\t single record authorization"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.edit(first_article, first_user) }
-      t.report("direct") { ComparisonStrategy.edit(first_article, first_user) }
+      t.report("attrs") { AttrStrategy.edit(first_available_article_id, test_user) }
+      t.report("direct") { ComparisonStrategy.edit(first_available_article_id, test_user) }
     end
 
     puts "\t multiple record authorization"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.edit_multiple(first_user_articles, first_user) }
-      t.report("direct") { ComparisonStrategy.edit_multiple(first_user_articles, first_user) }
+      t.report("attrs") { AttrStrategy.edit_multiple(available_article_ids, test_user) }
+      t.report("direct") { ComparisonStrategy.edit_multiple(available_article_ids, test_user) }
     end
 
     puts "\t searching by permission"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.edit_search(first_user) }
-      t.report("direct") { ComparisonStrategy.edit_search(first_user) }
+      t.report("attrs") { AttrStrategy.edit_search(test_user) }
+      t.report("direct") { ComparisonStrategy.edit_search(test_user) }
     end
   end
 
@@ -177,8 +177,8 @@ class AuthorizationBenchmarks
     different_user = users.last.reload
     test_user.group_users.where(group: off_limits_group).destroy_all
 
-    available_articles =  Article.where(public: false, owner: different_user, group: available_group)
-    unavailable_articles =  Article.where(public: false, owner: different_user, group: off_limits_group)
+    available_article_ids =  Article.where(public: false, owner: different_user, group: available_group).pluck(:id)
+    unavailable_article_ids =  Article.where(public: false, owner: different_user, group: off_limits_group).pluck(:id)
 
     Article.find_each do |article|
       AuthorizationAttrs.reset_attrs_for(article)
@@ -188,20 +188,20 @@ class AuthorizationBenchmarks
 
     puts "\t single record authorization"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.view(available_articles.first, test_user) }
-      t.report("direct") { ComparisonStrategy.view(available_articles.first, test_user) }
+      t.report("attrs") { AttrStrategy.view(available_article_ids.first, test_user) }
+      t.report("direct") { ComparisonStrategy.view(available_article_ids.first, test_user) }
     end
 
     puts "\t multiple record authorization - none match (fastest for direct)"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.view_multiple(unavailable_articles, test_user) }
-      t.report("direct") { ComparisonStrategy.view_multiple(unavailable_articles, test_user) }
+      t.report("attrs") { AttrStrategy.view_multiple(unavailable_article_ids, test_user) }
+      t.report("direct") { ComparisonStrategy.view_multiple(unavailable_article_ids, test_user) }
     end
 
     puts "\t multiple record authorization - all match (slowest for direct)"
     Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.view_multiple(available_articles, test_user) }
-      t.report("direct") { ComparisonStrategy.view_multiple(available_articles, test_user) }
+      t.report("attrs") { AttrStrategy.view_multiple(available_article_ids, test_user) }
+      t.report("direct") { ComparisonStrategy.view_multiple(available_article_ids, test_user) }
     end
 
     puts "\t searching by permission"
@@ -212,20 +212,20 @@ class AuthorizationBenchmarks
   end
 
   module AttrStrategy
-    def self.view(article, user)
-      AuthorizationAttrs.authorized?(:view, Article, article.id, user)
+    def self.view(article_id, user)
+      AuthorizationAttrs.authorized?(:view, Article, article_id, user)
     end
 
-    def self.edit(article, user)
-      AuthorizationAttrs.authorized?(:edit, Article, article.id, user)
+    def self.edit(article_id, user)
+      AuthorizationAttrs.authorized?(:edit, Article, article_id, user)
     end
 
-    def self.view_multiple(articles, user)
-      AuthorizationAttrs.authorized?(:view, Article, articles.map(&:id), user)
+    def self.view_multiple(article_ids, user)
+      AuthorizationAttrs.authorized?(:view, Article, article_ids, user)
     end
 
-    def self.edit_multiple(articles, user)
-      AuthorizationAttrs.authorized?(:edit, Article, articles.map(&:id), user)
+    def self.edit_multiple(article_ids, user)
+      AuthorizationAttrs.authorized?(:edit, Article, article_ids, user)
     end
 
     def self.view_search(user)
@@ -238,30 +238,46 @@ class AuthorizationBenchmarks
   end
 
   module ComparisonStrategy
-    def self.view(article, user)
+    def self.view(article_id, user)
+      article = find_if_id(article_id)
+
       article.public ||
         article.owner_id == user.id ||
         user.group_users.pluck(:group_id).include?(article.group_id)
     end
 
-    def self.edit(article, user)
+    def self.edit(article_id, user)
+      article = find_if_id(article_id)
+
       article.public || user.id == article.owner_id
     end
 
-    def self.view_multiple(articles, user)
+    def self.view_multiple(article_ids, user)
+      articles = Article.find(article_ids)
+
       articles.all? { |article| view(article, user) }
     end
 
-    def self.edit_multiple(articles, user)
+    def self.edit_multiple(article_ids, user)
+      articles = Article.find(article_ids)
+
       articles.all? { |article| edit(article, user) }
     end
 
     def self.view_search(user)
-      Article.all.to_a.select { |article| view(article, user) }
+      Article.all.select { |article_id| view(article_id, user) }
     end
 
     def self.edit_search(user)
-      Article.all.to_a.select { |article| edit(article, user) }
+      Article.all.select { |article_id| edit(article_id, user) }
+    end
+
+    def self.find_if_id(article_id)
+      if article_id.is_a? Integer
+        Article.find(article_id)
+      else
+        article_id
+      end
     end
   end
 end
