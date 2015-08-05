@@ -12,6 +12,30 @@ permission and the record's attributes. By preloading these approved
 attributes for each user and storing the records's attributes, we gain
 the ability to easily search by permission in a database or search engine.
 
+## Why another framework?
+
+There are two primary reasons to use an authorization framework like this.
+
+1. You need to search via permission either directly or else in a separate
+   service such as a search engine and don't want to duplicate your
+   authorizations logic. Avoiding such duplications and rewrites will improve
+   both code quality and your personal efficiency. 
+2. You think that such searches are likely to be required as your application
+   grows and want to maintain that flexibility.
+
+Reasons not to use this:
+
+1. Using a separate table for authorizations incurs a performance penalty for
+   most authorizations on single records, which is a common use case. Since this is
+   a penalty relative to what is usually a fast operation, this may or may not be
+   relevant to your application. Check the benchmarks and your own application's
+   bottlenecks to see if this trade-off is acceptable to you.
+2. Additional (though minimal) maintenance is required to keep your authorizations
+   table up to date.
+
+AuthorizationAttrs can easily exist alongside other authorization frameworks,
+so use as little or as much of it as you want.
+
 ## Example
 
 Say you're working on an application with organizations and groups within them.
@@ -123,6 +147,9 @@ AuthorizedAttrs.authorized?(:edit, Article, article_id, user)
 
 # returns true only if all records are authorized
 AuthorizedAttrs.authorized?(:edit, Article, array_of_article_ids, user)
+
+# raises error if authorization returns false
+AuthorizationAttrs.authorize!(:edit, Article, article_id, user)
 ```
 
 ActiveRecord model instances will also work in place of ids.
@@ -213,13 +240,16 @@ General summaries of current benchmarks:
 - Since authorizations are done as a full SQL query, they cannot terminate early
   once the query begins. It also means that they are subject to less variance
   in performance than typical direct comparisons.
-- Checking permissions on a single record can be slower than equivalent direct 
-  comparisons, though not greatly.
+- Checking permissions on a single record is typically slower than equivalent direct 
+  comparisons.
 - Testing on multiple records is approximately as fast as testing a single
-  record. Compared to equivalent iterative direct comparisons, this ranges from similar
-  to much faster.
+  record. Compared to equivalent iterative direct comparisons, this tends to be
+  faster the more records are being evaluated, especially when all evaluate to
+  true (which should be the case for a well-designed UI).
 - Searching by permission is faster than authorizing a single record.
-  An equivalent iterative direct comparison is entirely unfeasible.
+  An equivalent iterative direct comparison is entirely unfeasible and could
+  only be rendered feasible by duplicating authorization logic in a separate
+  query.
 
 Pull requests to add more benchmarks are welcomed. 
 
