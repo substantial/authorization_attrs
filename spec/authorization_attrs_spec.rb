@@ -16,6 +16,22 @@ describe AuthorizationAttrs do
       .with(Foo) { authorizations_class }
   end
 
+  describe ".authorize!" do
+    it "should not raise an error if authorized" do
+      allow(authorizations_class_instance).to receive(:bazify) { :all }
+
+      expect { AuthorizationAttrs.authorize!(:bazify, Foo, foo, user) }
+        .not_to raise_error AuthorizationAttrs::UnauthorizedAccessError
+    end
+
+    it "should raise an error if unauthorized" do
+      allow(authorizations_class_instance).to receive(:bazify) { [] }
+
+      expect { AuthorizationAttrs.authorize!(:bazify, Foo, foo, user) }
+        .to raise_error AuthorizationAttrs::UnauthorizedAccessError
+    end
+  end
+
   describe ".authorized?" do
     it 'should return true if user attributes return :all' do
       allow(authorizations_class_instance).to receive(:bazify) { :all }

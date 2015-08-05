@@ -4,6 +4,10 @@ require "authorization_attrs/default_finder"
 require "authorization_attrs/ids_filter"
 
 module AuthorizationAttrs
+  def self.authorize!(*args)
+    fail UnauthorizedAccessError unless authorized?(*args)
+  end
+
   def self.authorized?(permission, model, records, user)
     record_ids = IdsFilter.filter(records)
 
@@ -46,4 +50,6 @@ module AuthorizationAttrs
   def self.finder
     DefaultFinder
   end
+
+  class UnauthorizedAccessError < StandardError; end
 end
