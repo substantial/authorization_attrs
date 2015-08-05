@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "activerecord", "~> 4.2"
   spec.add_development_dependency "sqlite3", "~> 1.3.10"
   spec.add_development_dependency "rspec-activemodel-mocks"
+  spec.add_development_dependency "benchmark-ips"
 end

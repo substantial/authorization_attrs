@@ -1,4 +1,4 @@
-require 'benchmark'
+require 'benchmark/ips'
 require 'active_record'
 require 'database_cleaner'
 require 'authorization_attrs'
@@ -124,9 +124,13 @@ class AuthorizationAttrsBenchmarks
 
   def perform_benchmark(method_name, label, *args)
     puts "\t #{label}"
-    Benchmark.bm(7) do |t|
-      t.report("attrs") { AttrStrategy.send(method_name, *args) }
-      t.report("direct") { DirectStrategy.send(method_name, *args) }
+    Benchmark.ips do |x|
+      x.config(time: 5, warmup: 2)
+
+      x.report("attrs") { AttrStrategy.send(method_name, *args) }
+      x.report("direct") { DirectStrategy.send(method_name, *args) }
+
+      x.compare!
     end
   end
 
