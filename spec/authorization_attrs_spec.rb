@@ -21,7 +21,7 @@ describe AuthorizationAttrs do
       allow(authorizations_class_instance).to receive(:bazify) { :all }
 
       expect { AuthorizationAttrs.authorize!(:bazify, Foo, foo, user) }
-        .not_to raise_error AuthorizationAttrs::UnauthorizedAccessError
+        .not_to raise_error
     end
 
     it "should raise an error if unauthorized" do
