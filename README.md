@@ -1,3 +1,5 @@
+[![Code Climate](https://codeclimate.com/github/substantial/authorization_attrs/badges/gpa.svg)](https://codeclimate.com/github/substantial/authorization_attrs)
+
 # AuthorizationAttrs
 
 This is a light authorization library designed to permit searching by
