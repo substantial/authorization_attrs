@@ -1,4 +1,5 @@
 [![Code Climate](https://codeclimate.com/github/substantial/authorization_attrs/badges/gpa.svg)](https://codeclimate.com/github/substantial/authorization_attrs)
+[![Build Status](https://travis-ci.org/substantial/authorization_attrs.svg?branch=master)](https://travis-ci.org/substantial/authorization_attrs)
 
 # AuthorizationAttrs
 
